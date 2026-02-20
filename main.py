@@ -7,21 +7,21 @@ from datetime import datetime
 from typing import Optional
 from pathlib import Path
 from dataclasses import dataclass
-from app.logging import LoggingConfig
 
+from app.database import TranslationDBUpdater
+from app.logging import LoggingConfig
 
 import typer
 from loguru import logger
 
 from app import SUPPORTED_LANGUAGES, DEFAULT_LANGUAGES, DEFAULT_PROMPT
-from app.database import DatabaseTranslationSource
 from app.excel import XlsxTranslationSource
 from app.hf_translator import HuggingFaceTranslator
 from app.cloud_translator import GoogleTranslator
-from app.ollama_translator import Translator
+from app.ollama_translator import OllamaTranslator
+from app.string_exporter import AndroidStringsExporter
 
 app = typer.Typer(help="Translate Android string resources using a local Ollama model.")
-
 
 
 def resolve_languages(languages: str | None) -> dict[str, tuple[str, str]]:
@@ -37,9 +37,10 @@ def resolve_languages(languages: str | None) -> dict[str, tuple[str, str]]:
             raise typer.Exit(code=1)
     return {code: SUPPORTED_LANGUAGES[code] for code in codes}
 
+
 @app.callback()
 def main(
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose logging"),
+        verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose logging"),
 ):
     """
     Global CLI initialization.
@@ -59,8 +60,8 @@ def list_languages() -> None:
     typer.echo()
 
 
-@app.command("translate-xlsx")
-def translate_xlsx(
+@app.command("translate")
+def translate(
         input_file: Path = typer.Option("translations.xlsx", "--input", "-i"),
         output_file: Path = typer.Option("translations_filled.xlsx", "--output", "-o"),
         languages: Optional[str] = typer.Option(None, "--languages", "-l", help="Codes, 'all', or omit for defaults."),
@@ -77,24 +78,19 @@ def translate_xlsx(
 
     target_langs = resolve_languages(languages)
     source = XlsxTranslationSource(input_file, output_file, list(target_langs.keys()))
-    # translator = HuggingFaceTranslator(source, target_langs, dry_run=False)
-    translator = GoogleTranslator(source, target_langs, dry_run=False)
+    translator = HuggingFaceTranslator(source=None, target_langs=target_langs, dry_run=False)
+    g_translator = GoogleTranslator(source=None, target_langs=target_langs, dry_run=False)
+    db_url = "mysql+pymysql://root:fuelrod@localhost/translations"
+    updater = TranslationDBUpdater(db_url=db_url, translator=translator)
+    updater.update_missing()
 
-    translator.run()
 
+@app.command("export")
+def export() -> None:
+    db_url = "mysql+pymysql://root:fuelrod@localhost/translations"
 
-@app.command("translate-db")
-def translate_db(
-        db_path: str = typer.Option("translations.db", "--db", "-b", help="Path to SQLite database."),
-        languages: Optional[str] = typer.Option(None, "--languages", "-l", help="Codes, 'all', or omit for defaults."),
-        prompt_template: str = typer.Option(DEFAULT_PROMPT, "--prompt", "-p"),
-        dry_run: bool = typer.Option(False, "--dry-run", "-d"),
-        verbose: bool = typer.Option(False, "--verbose", "-v"),
-) -> None:
-    """Translate missing cells in a SQLite database."""
-    target_langs = resolve_languages(languages)
-    source = DatabaseTranslationSource(db_path, list(target_langs.keys()))
-    Translator(source, target_langs, prompt_template, dry_run).run()
+    exporter = AndroidStringsExporter(db_url=db_url, output_dir="res")
+    exporter.export(languages=DEFAULT_LANGUAGES)
 
 
 if __name__ == "__main__":
