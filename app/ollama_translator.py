@@ -6,7 +6,7 @@ from app import DEFAULT_PROMPT
 from app.translator import BaseTranslator
 
 
-class Translator(BaseTranslator):
+class OllamaTranslator(BaseTranslator):
     def __init__(self, source, target_langs, prompt_template, dry_run: bool) -> None:
         super().__init__(source, target_langs, dry_run)
         self.prompt_template = prompt_template
