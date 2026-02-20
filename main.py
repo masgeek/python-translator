@@ -7,6 +7,8 @@ from datetime import datetime
 from typing import Optional
 from pathlib import Path
 from dataclasses import dataclass
+from app.logging import LoggingConfig
+
 
 import typer
 from loguru import logger
@@ -14,21 +16,12 @@ from loguru import logger
 from app import SUPPORTED_LANGUAGES, DEFAULT_LANGUAGES, DEFAULT_PROMPT
 from app.database import DatabaseTranslationSource
 from app.excel import XlsxTranslationSource
-from app.translator import Translator
+from app.hf_translator import HuggingFaceTranslator
+from app.cloud_translator import GoogleTranslator
+from app.ollama_translator import Translator
 
 app = typer.Typer(help="Translate Android string resources using a local Ollama model.")
 
-
-
-# ── Logging ───────────────────────────────────────────────────────────────────
-def setup_logger(verbose: bool) -> None:
-    logger.remove()
-    level = "DEBUG" if verbose else "INFO"
-    logger.add(sys.stdout, colorize=True, level=level,
-               format="<green>{time:HH:mm:ss}</green> | <level>{level:<8}</level> | {message}")
-    logger.add(f"translate_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log",
-               encoding="utf-8", level="DEBUG",
-               format="{time:YYYY-MM-DD HH:mm:ss} | {level:<8} | {message}")
 
 
 def resolve_languages(languages: str | None) -> dict[str, tuple[str, str]]:
@@ -43,6 +36,16 @@ def resolve_languages(languages: str | None) -> dict[str, tuple[str, str]]:
             logger.error(f"Unknown codes: {invalid}. Run 'list-languages' to see options.")
             raise typer.Exit(code=1)
     return {code: SUPPORTED_LANGUAGES[code] for code in codes}
+
+@app.callback()
+def main(
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose logging"),
+):
+    """
+    Global CLI initialization.
+    Runs before any subcommand.
+    """
+    LoggingConfig.setup(verbose=verbose, log_prefix="translate")
 
 
 # ── CLI commands ──────────────────────────────────────────────────────────────
@@ -63,17 +66,21 @@ def translate_xlsx(
         languages: Optional[str] = typer.Option(None, "--languages", "-l", help="Codes, 'all', or omit for defaults."),
         prompt_template: str = typer.Option(DEFAULT_PROMPT, "--prompt", "-p"),
         dry_run: bool = typer.Option(False, "--dry-run", "-d"),
+
         verbose: bool = typer.Option(False, "--verbose", "-v"),
 ) -> None:
     """Translate missing cells in an Excel file."""
-    setup_logger(verbose)
+
     if not input_file.exists():
         logger.error(f"File not found: {input_file}")
         raise typer.Exit(code=1)
 
     target_langs = resolve_languages(languages)
     source = XlsxTranslationSource(input_file, output_file, list(target_langs.keys()))
-    Translator(source, target_langs, prompt_template, dry_run).run()
+    # translator = HuggingFaceTranslator(source, target_langs, dry_run=False)
+    translator = GoogleTranslator(source, target_langs, dry_run=False)
+
+    translator.run()
 
 
 @app.command("translate-db")
@@ -85,7 +92,6 @@ def translate_db(
         verbose: bool = typer.Option(False, "--verbose", "-v"),
 ) -> None:
     """Translate missing cells in a SQLite database."""
-    setup_logger(verbose)
     target_langs = resolve_languages(languages)
     source = DatabaseTranslationSource(db_path, list(target_langs.keys()))
     Translator(source, target_langs, prompt_template, dry_run).run()
