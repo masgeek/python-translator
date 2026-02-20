@@ -12,8 +12,10 @@ class HuggingFaceTranslator(BaseTranslator):
         # Preload MarianMT models for Kinyarwanda and Swahili
         self.models = {
             "rw": {
-                "tokenizer": MarianTokenizer.from_pretrained("Helsinki-NLP/opus-mt-en-rw"),
-                "model": MarianMTModel.from_pretrained("Helsinki-NLP/opus-mt-en-rw"),
+                # "tokenizer": MarianTokenizer.from_pretrained("Helsinki-NLP/opus-mt-en-rw"),
+                # "model": MarianMTModel.from_pretrained("Helsinki-NLP/opus-mt-en-rw"),
+                "tokenizer": AutoTokenizer.from_pretrained("mbazaNLP/Nllb_finetuned_general_en_kin"),
+                "model": AutoModelForSeq2SeqLM.from_pretrained("mbazaNLP/Nllb_finetuned_general_en_kin"),
             },
             "sw": {
 
@@ -21,12 +23,10 @@ class HuggingFaceTranslator(BaseTranslator):
                 # "model": MarianMTModel.from_pretrained("Helsinki-NLP/opus-mt-en-sw"),
                 # "tokenizer": AutoTokenizer.from_pretrained("Bildad/English-Swahili_Translation"),
                 # "model": AutoModelForSeq2SeqLM.from_pretrained("Bildad/English-Swahili_Translation")
-                # "tokenizer": AutoTokenizer.from_pretrained("CraneAILabs/swahili-gemma-1b"),
-                # "model": AutoModelForCausalLM.from_pretrained("CraneAILabs/swahili-gemma-1b")
+                "tokenizer": AutoTokenizer.from_pretrained("CraneAILabs/swahili-gemma-1b"),
+                "model": AutoModelForCausalLM.from_pretrained("CraneAILabs/swahili-gemma-1b")
                 # "tokenizer": AutoTokenizer.from_pretrained("Chituyi/opus-mt-english-swahili-finetuned-en-to-sw"),
                 # "model": AutoModelForSeq2SeqLM.from_pretrained("Chituyi/opus-mt-english-swahili-finetuned-en-to-sw")
-                "tokenizer": AutoTokenizer.from_pretrained("masakhane/afri-mt5-base"),
-                "model": AutoModelForSeq2SeqLM.from_pretrained("masakhane/afri-mt5-base")
             },
         }
 
@@ -44,4 +44,3 @@ class HuggingFaceTranslator(BaseTranslator):
         except Exception as e:
             logger.exception(f"HuggingFace error [{target_code}] on {text!r}: {e}")
             return ""
-
