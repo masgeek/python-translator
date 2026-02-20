@@ -14,9 +14,14 @@ load_dotenv(dotenv_path)
 SUPPORTED_LANGUAGES: dict[str, tuple[str, str]] = {
     "rw": ("Kinyarwanda", "Ikinyarwanda"),
     "sw": ("Tanzanian Swahili", "Kiswahili cha Tanzania"),
+    "fr": ("French", "French"),
+    "en": ("English", "English"),
 }
 
-DEFAULT_LANGUAGES = ["sw"]
+DEFAULT_LANGUAGES = [
+    "rw",
+    # "sw"
+]
 SOURCE_LANG = "English"
 SOURCE_CODE = "en"
 MODEL = "translategemma"
@@ -43,12 +48,13 @@ TRANSLATION_OVERRIDES = {
     },
     "rw": {
         "feedback": "ibitekerezo",
+        "confirm": "kwemeza",
+        "none": "nta na kimwe"
     },
 }
 
-# os.environ['HF_TOKEN'] = os.getenv("HF_TOKEN")
+os.environ['HF_TOKEN'] = os.getenv("HF_TOKEN")
 
-HF_TOKEN = os.getenv("HF_TOKEN")
 GOOGLE_TRANSLATOR_KEY = os.getenv("GOOGLE_TRANSLATOR_KEY")
 DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
