@@ -1,77 +1,41 @@
-import sys
-from abc import ABC, abstractmethod
-from datetime import datetime
-from typing import Optional
-from pathlib import Path
-from dataclasses import dataclass
-
-import typer
 from loguru import logger
+from sqlalchemy import create_engine, text
 
-from app.translation import TranslationSource, TranslationRow
+class TranslationDBUpdater:
+    def __init__(self, db_url: str,translator) -> None:
+        self.engine = create_engine(db_url)
+        self.translator = translator
 
+    def update_missing(self) -> None:
+        with self.engine.connect() as conn:
+            rows = conn.execute(text("SELECT lang_key, en, sw, rw FROM akilimo")).fetchall()
+            updated_count = 0
+            skipped_count = 0
 
-# ── Database backend ──────────────────────────────────────────────────────────
-class DatabaseTranslationSource(TranslationSource):
-    """
-    SQLite backend (swap connection string / driver for Postgres, MySQL, etc.).
-
-    Expected schema:
-        CREATE TABLE translations (
-            key         TEXT PRIMARY KEY,
-            source_text TEXT NOT NULL,
-            rw          TEXT,
-            sw          TEXT,
-            fr          TEXT,
-            -- ... one column per language code
-        );
-    """
-
-    def __init__(self, db_path: str, lang_codes: list[str]) -> None:
-        self.db_path = db_path
-        self.lang_codes = lang_codes
-        self._rows_cache: list[TranslationRow] = []
-
-    def describe(self) -> str:
-        return f"SQLite {self.db_path}"
-
-    def _connect(self):
-        import sqlite3
-        return sqlite3.connect(self.db_path)
-
-    def load(self) -> list[TranslationRow]:
-        logger.info(f"Connecting to database: {self.db_path}")
-        lang_cols = ", ".join(self.lang_codes)
-        query = f"SELECT key, source_text, {lang_cols} FROM translations"
-
-        with self._connect() as conn:
-            cursor = conn.execute(query)
-            col_names = [d[0] for d in cursor.description]
-            raw_rows = cursor.fetchall()
-
-        logger.info(f"Loaded {len(raw_rows)} rows from database.")
-        rows: list[TranslationRow] = []
-        for raw in raw_rows:
-            record = dict(zip(col_names, raw))
-            translations = {code: record.get(code) for code in self.lang_codes}
-            rows.append(TranslationRow(
-                key=record["key"],
-                source_text=record["source_text"],
-                translations=translations,
-            ))
-
-        self._rows_cache = rows
-        return rows
-
-    def save(self, rows: list[TranslationRow]) -> None:
-        with self._connect() as conn:
             for row in rows:
-                set_clause = ", ".join(f"{code} = ?" for code in self.lang_codes)
-                values = [row.translations.get(code) for code in self.lang_codes]
-                conn.execute(
-                    f"UPDATE translations SET {set_clause} WHERE key = ?",
-                    [*values, row.key],
-                )
-            conn.commit()
-        logger.success(f"Database updated — {len(rows)} rows written.")
+                lang_key, en_text, sw_text, rw_text = row
 
+                if not en_text:
+                    logger.warning(f"[{lang_key}] has no English source, skipping.")
+                    continue
+
+                for lang_code, (lang_name, _) in self.translator.target_langs.items():
+                    current_value = sw_text if lang_code == "sw" else rw_text if lang_code == "rw" else None
+
+                    if not current_value:
+                        result = self.translator.translate_text(en_text, lang_code, lang_name)
+                        if result:
+                            conn.execute(
+                                text(f"UPDATE akilimo SET {lang_code}=:val WHERE lang_key=:key"),
+                                {"val": result, "key": lang_key},
+                            )
+                            updated_count += 1
+                            logger.success(f"[{lang_code}] {lang_key} ✓ {result!r}")
+                        else:
+                            logger.error(f"[{lang_code}] {lang_key} ✗ failed")
+                    else:
+                        skipped_count += 1
+                        logger.debug(f"[{lang_code}] {lang_key} already filled, skipping.")
+
+            conn.commit()
+            logger.info(f"Update complete: {updated_count} translations added, {skipped_count} skipped.")
