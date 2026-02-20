@@ -1,3 +1,5 @@
+import re
+
 from loguru import logger
 from app import TRANSLATION_OVERRIDES
 
@@ -14,8 +16,9 @@ class BaseTranslator:
         """
         raise NotImplementedError("Subclasses must implement _call_model")
 
-    def _translate(self, text: str, target_code: str, target_lang: str) -> str:
-        logger.debug(f"Translating to {target_lang} [{target_code}]")
+    def _translate(self, text: str, target_code: str, target_lang: str, lang_key: str) -> str:
+
+        logger.debug(f"Translating to {target_lang} [{target_code}] and key--> {lang_key}")
 
         if self.dry_run:
             return f"[DRY-RUN:{target_code}] {text}"
@@ -23,6 +26,21 @@ class BaseTranslator:
         raw_translation = self._call_model(text, target_code)
         final_translation = self._apply_overrides(text, raw_translation, target_code)
         return final_translation
+
+    def is_array_key(self, key: str) -> bool:
+        if not key:
+            return False
+
+        start = key.find("[")
+        end = key.find("]")
+
+        if start == -1 or end == -1:
+            return False
+
+        if start < end and end - start > 1:
+            return True
+
+        return False
 
     def _apply_overrides(self, source_text: str, translated_text: str, target_code: str) -> str:
         overrides = TRANSLATION_OVERRIDES.get(target_code, {})
@@ -40,11 +58,15 @@ class BaseTranslator:
 
         return " ".join(corrected_words)
 
-    def translate_text(self, source_text: str, lang_code: str, lang_name: str) -> str:
+    def translate_text(self, source_text: str, lang_code: str, lang_name: str, lang_key) -> str:
         """
         Public method for external callers (e.g., DB updater).
         """
-        return self._translate(source_text, lang_code, lang_name)
+        if self.is_array_key(lang_key):
+            logger.error(f"Skipping translation for array key: {lang_key}")
+            return ""
+
+        return self._translate(source_text, lang_code, lang_name, lang_key)
 
     def run(self) -> None:
         rows = self.source.load()
@@ -60,7 +82,7 @@ class BaseTranslator:
                     logger.debug(f"  [{lang_code}] already filled, skipping.")
                     continue
 
-                result = self._translate(row.source_text, lang_code, lang_name)
+                result = self._translate(row.source_text, lang_code, lang_name, lang_key=row.key)
                 if result:
                     row.translations[lang_code] = result
                     logger.success(f"  [{lang_code}] ✓ {result!r}")
