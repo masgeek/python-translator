@@ -88,6 +88,7 @@ def translate(
 @app.command("export")
 def export(
         base_xml: Optional[str] = typer.Option("strings.xml", "--base", "-b"),
+        output_dir: Optional[str] = typer.Option("res", "--dir", "-d"),
 ) -> None:
     db_url = "mysql+pymysql://root:fuelrod@localhost/translations"
 

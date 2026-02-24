@@ -2,6 +2,7 @@ import os
 from loguru import logger
 from sqlalchemy import create_engine, text
 import xml.etree.ElementTree as ET
+import re
 from xml.dom import minidom
 
 
@@ -13,8 +14,8 @@ class AndroidStringsExporter:
 
         # Map DB language codes to Android locale resource directories
         self.lang_dir_map = {
-            "sw": "values-sw-rTZ",   # Swahili (Tanzania)
-            "rw": "values-rw-rRW",   # Kinyarwanda (Rwanda)
+            "sw": "values-sw-rTZ",  # Swahili (Tanzania)
+            "rw": "values-rw-rRW",  # Kinyarwanda (Rwanda)
         }
 
         # Load key order from original English XML
@@ -34,14 +35,21 @@ class AndroidStringsExporter:
             return [c for c in cols if c not in ("lang_key", "created_at", "updated_at", "en")]
 
     def _sanitize_value(self, value: str) -> str:
-        """Escape apostrophes for Android string resources."""
-        return value.replace("'", "\'")
+        """
+        Escape apostrophes with a single backslash for Android string resources.
+        If already escaped (\' ), leave them as-is.
+        """
+        # Replace any ' not already preceded by a backslash
+        return re.sub(r"(?<!\\)'", r"\\'", value)
 
     def _prettify(self, elem: ET.Element) -> str:
         """Return a pretty-printed XML string for the Element."""
         rough_string = ET.tostring(elem, encoding="utf-8")
         reparsed = minidom.parseString(rough_string)
-        return reparsed.toprettyxml(indent="    ", encoding="utf-8").decode("utf-8")
+        # Strip extra blank lines that minidom sometimes adds
+        pretty = reparsed.toprettyxml(indent="    ", encoding="utf-8").decode("utf-8")
+        lines = [line for line in pretty.splitlines() if line.strip()]
+        return "\n".join(lines)
 
     def export(self) -> None:
         with self.engine.connect() as conn:
