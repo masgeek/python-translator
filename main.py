@@ -46,7 +46,7 @@ def main(
     Global CLI initialization.
     Runs before any subcommand.
     """
-    LoggingConfig.setup(verbose=verbose, log_prefix="translate")
+    LoggingConfig.setup(verbose=True, log_prefix="translate")
 
 
 # ── CLI commands ──────────────────────────────────────────────────────────────
@@ -78,10 +78,10 @@ def translate(
 
     target_langs = resolve_languages(languages)
     source = XlsxTranslationSource(input_file, output_file, list(target_langs.keys()))
-    translator = HuggingFaceTranslator(source=None, target_langs=target_langs, dry_run=False)
+    # translator = HuggingFaceTranslator(source=None, target_langs=target_langs, dry_run=False)
     g_translator = GoogleTranslator(source=None, target_langs=target_langs, dry_run=False)
     db_url = "mysql+pymysql://root:fuelrod@localhost/translations"
-    updater = TranslationDBUpdater(db_url=db_url, translator=translator)
+    updater = TranslationDBUpdater(db_url=db_url, translator=g_translator)
     updater.update_missing()
 
 
@@ -90,7 +90,7 @@ def export() -> None:
     db_url = "mysql+pymysql://root:fuelrod@localhost/translations"
 
     exporter = AndroidStringsExporter(db_url=db_url, output_dir="res")
-    exporter.export(languages=DEFAULT_LANGUAGES)
+    exporter.export()
 
 
 if __name__ == "__main__":

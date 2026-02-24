@@ -2,6 +2,7 @@ import re
 
 from loguru import logger
 from app import TRANSLATION_OVERRIDES
+from rapidfuzz import fuzz, process
 
 
 class BaseTranslator:
@@ -17,15 +18,59 @@ class BaseTranslator:
         raise NotImplementedError("Subclasses must implement _call_model")
 
     def _translate(self, text: str, target_code: str, target_lang: str, lang_key: str) -> str:
-
         logger.debug(f"Translating to {target_lang} [{target_code}] and key--> {lang_key}")
 
         if self.dry_run:
             return f"[DRY-RUN:{target_code}] {text}"
 
-        raw_translation = self._call_model(text, target_code)
-        final_translation = self._apply_overrides(text, raw_translation, target_code)
+        # 1. Protect override phrases BEFORE translation
+        protected_text, placeholder_map = self._protect_overrides(text, target_code)
+
+        # 2. Send to model
+        raw_translation = self._call_model(protected_text, target_code)
+
+        # 3. Restore overrides AFTER translation
+        final_translation = self._restore_overrides(raw_translation, placeholder_map)
+
         return final_translation
+
+    def _protect_overrides(self, source_text: str, target_code: str):
+        overrides = TRANSLATION_OVERRIDES.get(target_code, {})
+        if not overrides:
+            return source_text, {}
+
+        protected_text = source_text
+        placeholder_map = {}
+
+        for eng, correct in overrides.items():
+            pattern = re.compile(rf"\b{re.escape(eng)}\b", re.IGNORECASE)
+
+            def replacer(match):
+                original = match.group()
+                placeholder = f"⟦OVR_{len(placeholder_map)}⟧"
+
+                placeholder_map[placeholder] = (correct, original)
+                return placeholder
+
+            protected_text = pattern.sub(replacer, protected_text)
+
+        return protected_text, placeholder_map
+
+    def _restore_overrides(self, translated_text: str, placeholder_map: dict):
+        restored = translated_text
+
+        for placeholder, (correct, original) in placeholder_map.items():
+
+            if original.isupper():
+                replacement = correct.upper()
+            elif original.istitle():
+                replacement = correct.title()
+            else:
+                replacement = correct.lower()
+
+            restored = restored.replace(placeholder, replacement)
+
+        return restored
 
     def is_array_key(self, key: str) -> bool:
         if not key:
@@ -42,23 +87,7 @@ class BaseTranslator:
 
         return False
 
-    def _apply_overrides(self, source_text: str, translated_text: str, target_code: str) -> str:
-        overrides = TRANSLATION_OVERRIDES.get(target_code, {})
-        words = translated_text.split()
-        corrected_words = []
-
-        for w in words:
-            lw = w.lower().strip("!?.,")
-            for eng, correct in overrides.items():
-                if eng.lower() in source_text.lower() and (lw == eng.lower() or "mgongo" in lw):
-                    corrected_words.append(correct)
-                    break
-            else:
-                corrected_words.append(w)
-
-        return " ".join(corrected_words)
-
-    def translate_text(self, source_text: str, lang_code: str, lang_name: str, lang_key) -> str:
+    def translate_word(self, source_text: str, lang_code: str, lang_name: str, lang_key) -> str:
         """
         Public method for external callers (e.g., DB updater).
         """

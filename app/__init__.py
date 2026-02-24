@@ -19,8 +19,9 @@ SUPPORTED_LANGUAGES: dict[str, tuple[str, str]] = {
 }
 
 DEFAULT_LANGUAGES = [
-    "rw",
-    # "sw"
+    # "rw",
+    "sw",
+    # "fr"
 ]
 SOURCE_LANG = "English"
 SOURCE_CODE = "en"
@@ -43,8 +44,14 @@ DEFAULT_PROMPT = (
 TRANSLATION_OVERRIDES = {
     "sw": {
         "feedback": "maoni",
-        "username": "jina la mtumiaji",
-        "password": "nenosiri",
+        "very poor": "Duni Sana",
+        "poor": "duni",
+        "exit application": "toka kwenye programu",
+        "finish": "maliza",
+        "Field lat": "LAT ya uwanjani",
+        "Field lon": "LON ya uwanjani",
+        "akilimo": "AKILIMO",
+        "Receive SMS": "Pokea SMS",
     },
     "rw": {
         "feedback": "ibitekerezo",
