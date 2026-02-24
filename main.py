@@ -86,10 +86,12 @@ def translate(
 
 
 @app.command("export")
-def export() -> None:
+def export(
+        base_xml: Optional[str] = typer.Option("strings.xml", "--base", "-b"),
+) -> None:
     db_url = "mysql+pymysql://root:fuelrod@localhost/translations"
 
-    exporter = AndroidStringsExporter(db_url=db_url, output_dir="res")
+    exporter = AndroidStringsExporter(db_url=db_url, output_dir="res", base_xml_path=base_xml)
     exporter.export()
 
 

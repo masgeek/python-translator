@@ -19,9 +19,9 @@ SUPPORTED_LANGUAGES: dict[str, tuple[str, str]] = {
 }
 
 DEFAULT_LANGUAGES = [
-    # "rw",
+    "rw",
     "sw",
-    # "fr"
+    "fr"
 ]
 SOURCE_LANG = "English"
 SOURCE_CODE = "en"
@@ -44,7 +44,7 @@ DEFAULT_PROMPT = (
 TRANSLATION_OVERRIDES = {
     "sw": {
         "feedback": "maoni",
-        "very poor": "Duni Sana",
+        "very poor": "duni sana",
         "poor": "duni",
         "exit application": "toka kwenye programu",
         "finish": "maliza",
@@ -52,11 +52,14 @@ TRANSLATION_OVERRIDES = {
         "Field lon": "LON ya uwanjani",
         "akilimo": "AKILIMO",
         "Receive SMS": "Pokea SMS",
+        "Exact Price": "Bei Kamili",
+        "Specify the exact area of your field": "Bainisha eneo halisi la uwanja wako",
     },
     "rw": {
         "feedback": "ibitekerezo",
         "confirm": "kwemeza",
-        "none": "nta na kimwe"
+        "none": "nta na kimwe",
+        "akilimo": "AKILIMO",
     },
 }
 
