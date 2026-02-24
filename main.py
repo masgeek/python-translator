@@ -1,24 +1,16 @@
-import openpyxl
-import subprocess
-import json
-import sys
-from abc import ABC, abstractmethod
-from datetime import datetime
-from typing import Optional
+from os import getenv
 from pathlib import Path
-from dataclasses import dataclass
-
-from app.database import TranslationDBUpdater
-from app.logging import LoggingConfig
+from typing import Optional
 
 import typer
+from dotenv import load_dotenv
 from loguru import logger
 
 from app import SUPPORTED_LANGUAGES, DEFAULT_LANGUAGES, DEFAULT_PROMPT
-from app.excel import XlsxTranslationSource
-from app.hf_translator import HuggingFaceTranslator
 from app.cloud_translator import GoogleTranslator
-from app.ollama_translator import OllamaTranslator
+from app.database import TranslationDBUpdater
+from app.excel import XlsxTranslationSource
+from app.logging import LoggingConfig
 from app.string_exporter import AndroidStringsExporter
 
 app = typer.Typer(help="Translate Android string resources using a local Ollama model.")
@@ -87,12 +79,42 @@ def translate(
 
 @app.command("export")
 def export(
-        base_xml: Optional[str] = typer.Option("strings.xml", "--base", "-b"),
-        output_dir: Optional[str] = typer.Option("res", "--dir", "-d"),
+        base_xml: str = typer.Option(
+            getenv("BASE_XML", "strings.xml"),
+            "--base",
+            "-b",
+            help="Path to the base English strings.xml file used to preserve key order."
+        ),
+        output_dir: str = typer.Option(
+            getenv("OUTPUT_DIR", "res"),
+            "--dir",
+            "-d",
+            help="Destination Android res directory where translations will be exported."
+        ),
+        db_url: str = typer.Option(
+            getenv("DB_URL"),
+            "--db-url",
+            "-u",
+            help="Database connection URL for the translations source."
+        ),
+        env_file: Optional[str] = typer.Option(
+            None,
+            "--env-file",
+            "-e",
+            help="Optional path to a .env file to load environment variables from."
+        ),
 ) -> None:
-    db_url = "mysql+pymysql://root:fuelrod@localhost/translations"
+    # Load .env automatically if present
+    if env_file:
+        load_dotenv(env_file)
+    else:
+        load_dotenv()
 
-    exporter = AndroidStringsExporter(db_url=db_url, output_dir="res", base_xml_path=base_xml)
+    exporter = AndroidStringsExporter(
+        db_url=db_url,
+        output_dir=output_dir,
+        base_xml_path=base_xml
+    )
     exporter.export()
 
 
