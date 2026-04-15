@@ -573,27 +573,27 @@ grpc = ["grpcio (>=1.38.0,<2.0.0) ; python_version < \"3.14\"", "grpcio (>=1.75.
 
 [[package]]
 name = "google-cloud-translate"
-version = "3.24.0"
+version = "3.26.0"
 description = "Google Cloud Translate API client library"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "google_cloud_translate-3.24.0-py3-none-any.whl", hash = "sha256:a4000f01ab51ff790913c3f40425e118e2632e7cd1589ae0401d19e6b355aedb"},
-    {file = "google_cloud_translate-3.24.0.tar.gz", hash = "sha256:2f3b8b90f8cdaf63a435d18e63b21c3650de31fc4f858623f2d0d69be0cd3e9a"},
+    {file = "google_cloud_translate-3.26.0-py3-none-any.whl", hash = "sha256:5b9f4d2cfdc41fcd357cda47d4d880acb6d720be7f0b8fdf95f2816dc982359d"},
+    {file = "google_cloud_translate-3.26.0.tar.gz", hash = "sha256:74c4c302ea705daa1d7dda095288fd736bb616f943480db34314cd0cd52cc9dd"},
 ]
 
 [package.dependencies]
-google-api-core = {version = ">=1.34.1,<2.0.dev0 || >=2.11.dev0,<3.0.0", extras = ["grpc"]}
+google-api-core = {version = ">=2.11.0,<3.0.0", extras = ["grpc"]}
 google-auth = ">=2.14.1,<2.24.0 || >2.24.0,<2.25.0 || >2.25.0,<3.0.0"
-google-cloud-core = ">=1.4.4,<3.0.0"
+google-cloud-core = ">=2.0.0,<3.0.0"
 grpc-google-iam-v1 = ">=0.14.0,<1.0.0"
 grpcio = [
     {version = ">=1.75.1,<2.0.0", markers = "python_version >= \"3.14\""},
     {version = ">=1.33.2,<2.0.0", markers = "python_version < \"3.14\""},
 ]
 proto-plus = {version = ">=1.25.0,<2.0.0", markers = "python_version >= \"3.13\""}
-protobuf = ">=3.20.2,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<7.0.0"
+protobuf = ">=4.25.8,<8.0.0"
 
 [[package]]
 name = "googleapis-common-protos"
@@ -2538,6 +2538,13 @@ files = [
     {file = "torch-2.10.0-2-cp311-none-macosx_11_0_arm64.whl", hash = "sha256:418997cb02d0a0f1497cf6a09f63166f9f5df9f3e16c8a716ab76a72127c714f"},
     {file = "torch-2.10.0-2-cp312-none-macosx_11_0_arm64.whl", hash = "sha256:13ec4add8c3faaed8d13e0574f5cd4a323c11655546f91fbe6afa77b57423574"},
     {file = "torch-2.10.0-2-cp313-none-macosx_11_0_arm64.whl", hash = "sha256:e521c9f030a3774ed770a9c011751fb47c4d12029a3d6522116e48431f2ff89e"},
+    {file = "torch-2.10.0-3-cp310-cp310-manylinux_2_28_x86_64.whl", hash = "sha256:a1ff626b884f8c4e897c4c33782bdacdff842a165fee79817b1dd549fdda1321"},
+    {file = "torch-2.10.0-3-cp311-cp311-manylinux_2_28_x86_64.whl", hash = "sha256:ac5bdcbb074384c66fa160c15b1ead77839e3fe7ed117d667249afce0acabfac"},
+    {file = "torch-2.10.0-3-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:98c01b8bb5e3240426dcde1446eed6f40c778091c8544767ef1168fc663a05a6"},
+    {file = "torch-2.10.0-3-cp313-cp313-manylinux_2_28_x86_64.whl", hash = "sha256:80b1b5bfe38eb0e9f5ff09f206dcac0a87aadd084230d4a36eea5ec5232c115b"},
+    {file = "torch-2.10.0-3-cp313-cp313t-manylinux_2_28_x86_64.whl", hash = "sha256:46b3574d93a2a8134b3f5475cfb98e2eb46771794c57015f6ad1fb795ec25e49"},
+    {file = "torch-2.10.0-3-cp314-cp314-manylinux_2_28_x86_64.whl", hash = "sha256:b1d5e2aba4eb7f8e87fbe04f86442887f9167a35f092afe4c237dfcaaef6e328"},
+    {file = "torch-2.10.0-3-cp314-cp314t-manylinux_2_28_x86_64.whl", hash = "sha256:0228d20b06701c05a8f978357f657817a4a63984b0c90745def81c18aedfa591"},
     {file = "torch-2.10.0-cp310-cp310-manylinux_2_28_aarch64.whl", hash = "sha256:5276fa790a666ee8becaffff8acb711922252521b28fbce5db7db5cf9cb2026d"},
     {file = "torch-2.10.0-cp310-cp310-manylinux_2_28_x86_64.whl", hash = "sha256:aaf663927bcd490ae971469a624c322202a2a1e68936eb952535ca4cd3b90444"},
     {file = "torch-2.10.0-cp310-cp310-win_amd64.whl", hash = "sha256:a4be6a2a190b32ff5c8002a0977a25ea60e64f7ba46b1be37093c141d9c49aeb"},
